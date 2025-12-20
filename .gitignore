@@ -1,0 +1,7 @@
+﻿# Local backup files
+*.bak
+*.bak_*
+~$*
+*.tmp
+*.swp
+*.swo
