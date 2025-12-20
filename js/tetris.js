@@ -395,7 +395,7 @@
                 localStorage.setItem('tetrisSprintBestMs', String(sprintBestMs));
             }
             updateHud();
-            showOverlay('Sprint Complete', 'Time: ' + formatTimeMs(finalMs) + ' (Enter/Space/R restart, Esc/B back)', false);
+            showOverlay('\u51B2\u523A\u5B8C\u6210', '\u7528\u65F6\uFF1A ' + formatTimeMs(finalMs) + '\uFF08Enter/Space/R \u91CD\u65B0\u5F00\u59CB\uFF0CEsc/B \u8FD4\u56DE\uFF09', false);
         }
 
         function lockPiece() {
