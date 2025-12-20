@@ -19,6 +19,18 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
         });
     }
+
+    // Ensure homepage Tetris preview blocks render (inject 4x4 cells if missing)
+    (function initTetrisCardPreview() {
+        const previews = document.querySelectorAll('.tetromino-preview');
+        if (!previews || previews.length === 0) return;
+        previews.forEach(el => {
+            if (!el || el.children.length > 0) return;
+            const frag = document.createDocumentFragment();
+            for (let i = 0; i < 16; i++) frag.appendChild(document.createElement('div'));
+            el.appendChild(frag);
+        });
+    })();
     
     // 打字机效果 - 欢迎区
     const typewriterElement = document.getElementById('typewriter-text');
