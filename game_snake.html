@@ -34,12 +34,18 @@
         .snake-stats {
             display: flex;
             justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
             margin-bottom: 20px;
             padding: 15px;
             background-color: var(--background-light);
             border-radius: var(--border-radius);
             font-size: 1.1rem;
             font-weight: 600;
+        }
+
+        .snake-stats .stat {
+            white-space: nowrap;
         }
         
         .snake-canvas-container {
@@ -179,6 +185,78 @@
         .obstacle-btn.active {
             background-color: var(--primary-color);
             color: white;
+        }
+
+        .playmode-btn {
+            padding: 10px 18px;
+            border-radius: var(--border-radius);
+            border: none;
+            background-color: var(--background-light);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .playmode-btn.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .quest-panel {
+            margin: 0 auto 18px;
+            max-width: 700px;
+            background: rgba(0, 188, 212, 0.08);
+            border: 1px solid rgba(0, 188, 212, 0.25);
+            border-radius: var(--border-radius);
+            padding: 12px 14px;
+            text-align: left;
+        }
+
+        .quest-panel[hidden] {
+            display: none !important;
+        }
+
+        .quest-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .quest-level {
+            font-weight: 800;
+            color: var(--primary-color);
+        }
+
+        .quest-badge {
+            padding: 2px 10px;
+            border-radius: 999px;
+            background: rgba(26, 35, 126, 0.10);
+            color: var(--primary-color);
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .quest-desc {
+            color: var(--text-color);
+            opacity: 0.92;
+            margin-bottom: 6px;
+            line-height: 1.35;
+        }
+
+        .quest-progress {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.98rem;
+        }
+
+        .quest-progress strong {
+            color: var(--secondary-color);
         }
         
         .mode-btn:focus-visible,
@@ -449,6 +527,12 @@
                         <div class="stat">
                             <strong>速度：</strong> <span id="speed-display">慢速</span> (<span id="delay-display">250</span>ms)
                         </div>
+                        <div class="stat" id="level-stat" hidden>
+                            <strong>关卡：</strong> <span id="level-display">1</span>
+                        </div>
+                        <div class="stat">
+                            <strong>护盾：</strong> <span id="shield-display">0</span>
+                        </div>
                     </div>
                     
                     <!-- 难度选择 -->
@@ -467,6 +551,23 @@
                     <div class="mode-selector">
                         <button class="obstacle-btn active" data-obstacles="on">有障碍物</button>
                         <button class="obstacle-btn" data-obstacles="off">无障碍物</button>
+                    </div>
+
+                    <div class="mode-selector">
+                        <button class="playmode-btn active" data-playmode="classic" type="button">经典模式</button>
+                        <button class="playmode-btn" data-playmode="adventure" type="button">冒险关卡</button>
+                    </div>
+
+                    <div class="quest-panel" id="quest-panel" hidden>
+                        <div class="quest-row">
+                            <div class="quest-level" id="quest-level">关卡 1</div>
+                            <div class="quest-badge" id="quest-badge">任务</div>
+                        </div>
+                        <div class="quest-desc" id="quest-desc">目标加载中...</div>
+                        <div class="quest-progress">
+                            <span>进度：</span>
+                            <strong id="quest-progress">0/0</strong>
+                        </div>
                     </div>
                     
                     <!-- 游戏画布 -->
@@ -495,6 +596,8 @@
                             <li><i class="fas fa-keyboard"></i> 电脑端：使用W、A、S、D或方向键控制蛇的移动</li>
                             <li><i class="fas fa-mobile-alt"></i> 移动端：点击屏幕下方的方向按钮控制</li>
                             <li><i class="fas fa-apple-alt"></i> 吃到食物：增加1分，蛇身变长</li>
+                            <li><i class="fas fa-flag"></i> 冒险关卡：每关都有目标，完成后进入下一关（速度更快/更难）</li>
+                            <li><i class="fas fa-cube"></i> 特殊物品：B加分 / S减速 / F加速 / D护盾（抵消一次碰撞） / C缩身（减少长度）</li>
                             <li><i class="fas fa-right-left"></i> 模式：可穿墙 / 碰墙失败（在难度下方切换）</li>
                             <li><i class="fas fa-skull-crossbones"></i> 游戏结束：碰到自己的身体（障碍物开启时也会结束；碰墙失败模式会因撞墙结束）</li>
                             <li><i class="fas fa-bolt"></i> 游戏技巧：不要急着改变方向，保持冷静思考</li>
@@ -516,6 +619,23 @@
                         </div>
                         <p class="hotkeys-hint">
                             &#x5FEB;&#x6377;&#x952E;&#xFF1A; Enter/Space/R = &#x518D;&#x73A9; &#xFF1B; Esc/Backspace/B = &#x8FD4;&#x56DE;&#x9009;&#x62E9;
+                        </p>
+                    </div>
+                </div>
+
+                <div class="game-over-modal" id="level-complete-modal" aria-hidden="true">
+                    <div class="modal-content">
+                        <div class="game-over-icon" id="level-complete-icon" style="color:#2ecc71;">
+                            <i class="fas fa-flag-checkered"></i>
+                        </div>
+                        <h2 id="level-complete-title">关卡完成</h2>
+                        <p id="level-complete-message" style="white-space: pre-line;">准备进入下一关！</p>
+                        <div class="modal-buttons">
+                            <button class="btn" id="next-level-btn" type="button">下一关</button>
+                            <button class="btn btn-secondary" id="level-exit-btn" type="button">返回选择</button>
+                        </div>
+                        <p class="hotkeys-hint">
+                            &#x5FEB;&#x6377;&#x952E;&#xFF1A; Enter/Space = &#x4E0B;&#x4E00;&#x5173; &#xFF1B; Esc/Backspace/B = &#x8FD4;&#x56DE;&#x9009;&#x62E9;
                         </p>
                     </div>
                 </div>
@@ -542,6 +662,9 @@
             const scoreDisplay = document.getElementById('score-display');
             const highScoreDisplay = document.getElementById('high-score-display');
             const speedDisplay = document.getElementById('speed-display');
+            const shieldDisplay = document.getElementById('shield-display');
+            const levelStat = document.getElementById('level-stat');
+            const levelDisplay = document.getElementById('level-display');
             const startBtn = document.getElementById('start-btn');
             const pauseBtn = document.getElementById('pause-btn');
             const gameOverModal = document.getElementById('game-over-modal');
@@ -550,8 +673,17 @@
             const difficultyBtns = document.querySelectorAll('.difficulty-btn');
             const modeBtns = document.querySelectorAll('.mode-btn');
             const obstacleBtns = document.querySelectorAll('.obstacle-btn');
+            const playModeBtns = document.querySelectorAll('.playmode-btn');
+            const questPanel = document.getElementById('quest-panel');
+            const questLevelEl = document.getElementById('quest-level');
+            const questDescEl = document.getElementById('quest-desc');
+            const questProgressEl = document.getElementById('quest-progress');
             const exitBtn = document.getElementById('exit-btn');
             const backLink = document.querySelector('a.back-btn[href]');
+            const levelCompleteModal = document.getElementById('level-complete-modal');
+            const nextLevelBtn = document.getElementById('next-level-btn');
+            const levelExitBtn = document.getElementById('level-exit-btn');
+            const levelCompleteMessage = document.getElementById('level-complete-message');
 
             function isEditableTarget(target) {
                 if (!target || !(target instanceof Element)) return false;
@@ -596,7 +728,8 @@
                 borderColor: '#1a237e',
                 foodSize: 0.8,  // 食物大小比例(相对于网格)
                 wallMode: localStorage.getItem('snakeWallMode') || 'crash', // crash|wrap
-                obstaclesMode: localStorage.getItem('snakeObstaclesMode') || 'on' // on|off
+                obstaclesMode: localStorage.getItem('snakeObstaclesMode') || 'on', // on|off
+                playMode: localStorage.getItem('snakePlayMode') || 'classic' // classic|adventure
             };
             
             let gameState = {
@@ -607,6 +740,14 @@
                 activeEffect: null, // {type, until}
                 speedMultiplier: 1,
                 foodsEaten: 0,
+                shieldCharges: 0,
+                shieldFlashUntil: 0,
+                shieldFlashCell: null,
+                prevSnakeSnapshot: null,
+                adventureLevel: 1,
+                levelSpeedFactor: 1,
+                levelReq: null, // {foods, bonus, shield, shrink}
+                levelProgress: { foods: 0, bonus: 0, shield: 0, shrink: 0 },
                 direction: 'right',
                 nextDirection: 'right',
                 score: 0,
@@ -619,7 +760,8 @@
             const SPECIAL_ITEM_TTL_MS = 8000;
             
             function getEffectiveSpeed() {
-                return Math.max(50, Math.round(gameSettings.speed * (gameState.speedMultiplier || 1)));
+                const base = gameSettings.speed * (gameState.speedMultiplier || 1) * (gameState.levelSpeedFactor || 1);
+                return Math.max(50, Math.round(base));
             }
             
             function updateSpeedUI() {
@@ -630,6 +772,105 @@
                 if (delay <= 80) speedText = "快速";
                 else if (delay <= 150) speedText = "中速";
                 speedDisplay.textContent = speedText;
+                updateShieldUI();
+                updateQuestUI();
+            }
+
+            function updateShieldUI() {
+                if (!shieldDisplay) return;
+                shieldDisplay.textContent = String(gameState.shieldCharges || 0);
+            }
+
+            function normalizePlayMode() {
+                if (gameSettings.playMode !== 'classic' && gameSettings.playMode !== 'adventure') {
+                    gameSettings.playMode = 'classic';
+                }
+            }
+
+            function isAdventure() {
+                normalizePlayMode();
+                return gameSettings.playMode === 'adventure';
+            }
+
+            function applyPlayModeUI() {
+                normalizePlayMode();
+                if (playModeBtns && playModeBtns.length > 0) {
+                    playModeBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.playmode === gameSettings.playMode));
+                }
+
+                const adv = isAdventure();
+                if (questPanel) questPanel.hidden = !adv;
+                if (levelStat) levelStat.hidden = !adv;
+                updateQuestUI();
+            }
+
+            function changePlayMode() {
+                if (!this || !this.dataset) return;
+                const next = this.dataset.playmode === 'adventure' ? 'adventure' : 'classic';
+                if (next === gameSettings.playMode) return;
+
+                gameSettings.playMode = next;
+                try { localStorage.setItem('snakePlayMode', gameSettings.playMode); } catch {}
+
+                // Return to menu state when switching play mode
+                exitToMenu();
+                applyPlayModeUI();
+            }
+
+            function calcLevelSpeedFactor(level) {
+                const lv = Math.max(1, Number(level) || 1);
+                return Math.max(0.6, 1 - (lv - 1) * 0.05);
+            }
+
+            function getLevelRequirements(level) {
+                const lv = Math.max(1, Number(level) || 1);
+                const foods = 5 + (lv - 1) * 2;
+                return {
+                    foods,
+                    bonus: lv >= 3 ? 1 : 0,
+                    shield: lv >= 4 ? 1 : 0,
+                    shrink: lv >= 5 ? 1 : 0,
+                };
+            }
+
+            function resetLevelProgress() {
+                gameState.levelProgress = { foods: 0, bonus: 0, shield: 0, shrink: 0 };
+                const lv = gameState.adventureLevel || 1;
+                gameState.levelReq = getLevelRequirements(lv);
+                gameState.levelSpeedFactor = isAdventure() ? calcLevelSpeedFactor(lv) : 1;
+            }
+
+            function buildQuestDescription(req) {
+                if (!req) return '目标加载中...';
+                const parts = [`吃掉 ${req.foods} 个食物`];
+                if (req.bonus) parts.push(`拾取 ${req.bonus} 个加分物品(B)`);
+                if (req.shield) parts.push(`拾取 ${req.shield} 个护盾(D)`);
+                if (req.shrink) parts.push(`拾取 ${req.shrink} 个缩身(C)`);
+                return '目标：' + parts.join('，') + '。';
+            }
+
+            function buildQuestProgressText(req, prog) {
+                if (!req || !prog) return '0/0';
+                const lines = [];
+                lines.push(`${Math.min(prog.foods, req.foods)}/${req.foods}`);
+                if (req.bonus) lines.push(`B ${Math.min(prog.bonus, req.bonus)}/${req.bonus}`);
+                if (req.shield) lines.push(`D ${Math.min(prog.shield, req.shield)}/${req.shield}`);
+                if (req.shrink) lines.push(`C ${Math.min(prog.shrink, req.shrink)}/${req.shrink}`);
+                return lines.join('  |  ');
+            }
+
+            function updateQuestUI() {
+                if (!isAdventure()) return;
+                if (!questPanel || !questLevelEl || !questDescEl || !questProgressEl) return;
+
+                const lv = gameState.adventureLevel || 1;
+                const req = gameState.levelReq || getLevelRequirements(lv);
+                const prog = gameState.levelProgress || { foods: 0, bonus: 0, shield: 0, shrink: 0 };
+
+                if (levelDisplay) levelDisplay.textContent = String(lv);
+                if (questLevelEl) questLevelEl.textContent = `关卡 ${lv}`;
+                if (questDescEl) questDescEl.textContent = buildQuestDescription(req);
+                if (questProgressEl) questProgressEl.textContent = buildQuestProgressText(req, prog);
             }
             
             // 调整Canvas尺寸
@@ -670,7 +911,9 @@
             }
             
             // 初始化游戏
-            function initGame() {
+            function initGame(options = {}) {
+                const resetScore = options.resetScore !== false;
+                const resetShield = options.resetShield !== false;
                 // 重置游戏状态
                 gameState.snake = [
                     {x: 10, y: 10},
@@ -680,13 +923,24 @@
                 
                 gameState.direction = 'right';
                 gameState.nextDirection = 'right';
-                gameState.score = 0;
+                if (resetScore) gameState.score = 0;
                 gameState.gameOver = false;
                 gameState.isPaused = false;
                 gameState.speedMultiplier = 1;
                 gameState.activeEffect = null;
                 gameState.specialItem = null;
                 gameState.foodsEaten = 0;
+                gameState.prevSnakeSnapshot = null;
+                if (resetShield) gameState.shieldCharges = 0;
+                gameState.shieldFlashUntil = 0;
+                gameState.shieldFlashCell = null;
+
+                if (isAdventure()) {
+                    if (!gameState.adventureLevel || gameState.adventureLevel < 1) gameState.adventureLevel = 1;
+                    resetLevelProgress();
+                } else {
+                    gameState.levelSpeedFactor = 1;
+                }
                 normalizeObstaclesMode();
                 gameState.obstacles = gameSettings.obstaclesMode === 'on' ? generateObstacles() : [];
                 
@@ -707,6 +961,7 @@
                 drawSnake();
                 drawFood();
                 drawSpecialItem();
+                drawShieldFlash();
                 
                 // 设置按钮状态
                 startBtn.textContent = '重新开始';
@@ -722,6 +977,7 @@
                 gameState.gameLoop = setInterval(function() {
                     if(!gameState.isPaused && !gameState.gameOver) {
                         tickTimedEffects();
+                        gameState.prevSnakeSnapshot = gameState.snake.map(s => ({ x: s.x, y: s.y }));
                         moveSnake();
                         checkCollision();
                         if(!gameState.gameOver) {
@@ -730,6 +986,7 @@
                             drawSnake();
                             drawFood();
                             drawSpecialItem();
+                            drawShieldFlash();
                         }
                     }
                 }, getEffectiveSpeed());
@@ -887,6 +1144,12 @@
                 } else if (gameState.specialItem.type === 'fast') {
                     color = '#e74c3c';
                     label = 'F';
+                } else if (gameState.specialItem.type === 'shield') {
+                    color = '#1abc9c';
+                    label = 'D';
+                } else if (gameState.specialItem.type === 'shrink') {
+                    color = '#9b59b6';
+                    label = 'C';
                 }
                 
                 ctx.save();
@@ -905,6 +1168,22 @@
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(label, x + cellSize / 2, y + cellSize / 2 + 1);
+                ctx.restore();
+            }
+
+            function drawShieldFlash() {
+                const until = gameState.shieldFlashUntil || 0;
+                if (!until || Date.now() > until) return;
+                if (!gameState.shieldFlashCell) return;
+
+                const cellSize = canvas.width / gameSettings.gridSize;
+                const x = gameState.shieldFlashCell.x * cellSize;
+                const y = gameState.shieldFlashCell.y * cellSize;
+                ctx.save();
+                ctx.fillStyle = 'rgba(26, 188, 156, 0.25)';
+                ctx.beginPath();
+                roundRectCompat(ctx, x + cellSize * 0.06, y + cellSize * 0.06, cellSize * 0.88, cellSize * 0.88, cellSize * 0.24);
+                ctx.fill();
                 ctx.restore();
             }
             
@@ -1021,9 +1300,16 @@
             
             function getObstacleCount() {
                 // Tie difficulty to base speed (lower delay => harder)
-                if (gameSettings.speed <= 80) return 14;
-                if (gameSettings.speed <= 150) return 10;
-                return 6;
+                let base = 6;
+                if (gameSettings.speed <= 80) base = 14;
+                else if (gameSettings.speed <= 150) base = 10;
+
+                if (isAdventure()) {
+                    const lv = Math.max(1, Number(gameState.adventureLevel) || 1);
+                    const bonus = Math.min(10, Math.floor((lv - 1) / 2) * 2);
+                    return base + bonus;
+                }
+                return base;
             }
             
             function tickTimedEffects() {
@@ -1044,9 +1330,10 @@
             function maybeSpawnSpecialItem() {
                 if (gameState.specialItem) return;
                 if (gameState.foodsEaten < 3) return;
-                if (gameState.foodsEaten % 4 !== 0) return;
+                const freq = isAdventure() ? 3 : 4;
+                if (gameState.foodsEaten % freq !== 0) return;
                 
-                const types = ['bonus', 'slow', 'fast'];
+                const types = getSpecialItemTypes();
                 const type = types[Math.floor(Math.random() * types.length)];
                 const pos = findEmptyCell();
                 if (!pos) return;
@@ -1055,8 +1342,18 @@
                     x: pos.x,
                     y: pos.y,
                     type,
-                    expiresAt: Date.now() + SPECIAL_ITEM_TTL_MS
+                    expiresAt: Date.now() + (isAdventure() ? 11000 : SPECIAL_ITEM_TTL_MS)
                 };
+            }
+
+            function getSpecialItemTypes() {
+                const base = ['bonus', 'slow', 'fast'];
+                if (isAdventure()) {
+                    const lv = gameState.adventureLevel || 1;
+                    if (lv >= 3) base.push('shield');
+                    if (lv >= 5) base.push('shrink');
+                }
+                return base;
             }
             
             function findEmptyCell() {
@@ -1096,6 +1393,16 @@
                     gameState.activeEffect = { type: 'fast', until: Date.now() + 5000 };
                     updateSpeedUI();
                     startGameLoop();
+                } else if (type === 'shield') {
+                    gameState.shieldCharges = Math.min(2, (gameState.shieldCharges || 0) + 1);
+                    updateShieldUI();
+                } else if (type === 'shrink') {
+                    // Shrink: remove extra tail segments (plus the normal "no-growth" pop in moveSnake)
+                    const len = gameState.snake.length;
+                    const extra = Math.min(3, Math.max(0, len - 4)); // ensure at least 3 after final pop
+                    for (let i = 0; i < extra; i++) gameState.snake.pop();
+                    gameState.score += 2;
+                    scoreDisplay.textContent = gameState.score;
                 }
                 
                 if (gameState.score > gameState.highScore) {
@@ -1103,6 +1410,61 @@
                     highScoreDisplay.textContent = gameState.highScore;
                     localStorage.setItem('snakeHighScore', String(gameState.highScore));
                 }
+
+                if (isAdventure()) {
+                    if (type === 'bonus') gameState.levelProgress.bonus += 1;
+                    else if (type === 'shield') gameState.levelProgress.shield += 1;
+                    else if (type === 'shrink') gameState.levelProgress.shrink += 1;
+                    updateQuestUI();
+                    maybeCompleteLevel();
+                }
+            }
+
+            function isLevelComplete(req, prog) {
+                if (!req || !prog) return false;
+                if (prog.foods < req.foods) return false;
+                if ((req.bonus || 0) > 0 && prog.bonus < req.bonus) return false;
+                if ((req.shield || 0) > 0 && prog.shield < req.shield) return false;
+                if ((req.shrink || 0) > 0 && prog.shrink < req.shrink) return false;
+                return true;
+            }
+
+            function openLevelCompleteModal() {
+                if (!levelCompleteModal) return;
+                levelCompleteModal.classList.add('active');
+                levelCompleteModal.setAttribute('aria-hidden', 'false');
+                if (levelCompleteMessage) {
+                    const lv = gameState.adventureLevel || 1;
+                    const nextLv = lv + 1;
+                    const nextReq = getLevelRequirements(nextLv);
+                    const nextDesc = buildQuestDescription(nextReq).replace(/^目标：/, '');
+                    levelCompleteMessage.textContent =
+                        `你完成了第 ${lv} 关！准备进入第 ${nextLv} 关。\n下一关目标：${nextDesc}`;
+                }
+            }
+
+            function closeLevelCompleteModal() {
+                if (!levelCompleteModal) return;
+                levelCompleteModal.classList.remove('active');
+                levelCompleteModal.setAttribute('aria-hidden', 'true');
+            }
+
+            function maybeCompleteLevel() {
+                if (!isAdventure()) return;
+                if (gameState.gameOver) return;
+                if (levelCompleteModal && levelCompleteModal.classList.contains('active')) return;
+
+                const req = gameState.levelReq;
+                const prog = gameState.levelProgress;
+                if (!isLevelComplete(req, prog)) return;
+
+                // Stop the loop and show modal
+                gameState.isPaused = true;
+                if (gameState.gameLoop) {
+                    clearInterval(gameState.gameLoop);
+                    gameState.gameLoop = null;
+                }
+                openLevelCompleteModal();
             }
             
             // 移动蛇
@@ -1147,6 +1509,11 @@
                     gameState.score++;
                     scoreDisplay.textContent = gameState.score;
                     gameState.foodsEaten++;
+                    if (isAdventure()) {
+                        gameState.levelProgress.foods += 1;
+                        updateQuestUI();
+                        maybeCompleteLevel();
+                    }
                     
                     // 更新最高分
                     if(gameState.score > gameState.highScore) {
@@ -1172,6 +1539,43 @@
                 }
             }
             
+            function showShieldBlockEffect(head) {
+                const cellSize = canvas.width / gameSettings.gridSize;
+                const cx = Math.min(gameSettings.gridSize - 1, Math.max(0, head.x));
+                const cy = Math.min(gameSettings.gridSize - 1, Math.max(0, head.y));
+                const x = cx * cellSize;
+                const y = cy * cellSize;
+
+                ctx.save();
+                ctx.fillStyle = 'rgba(26, 188, 156, 0.55)';
+                ctx.beginPath();
+                roundRectCompat(ctx, x + cellSize * 0.08, y + cellSize * 0.08, cellSize * 0.84, cellSize * 0.84, cellSize * 0.22);
+                ctx.fill();
+                ctx.restore();
+
+                gameState.shieldFlashUntil = Date.now() + 220;
+                gameState.shieldFlashCell = { x: cx, y: cy };
+            }
+
+            function tryConsumeShield(reason, head) {
+                if ((gameState.shieldCharges || 0) <= 0) return false;
+                if (!gameState.prevSnakeSnapshot || gameState.prevSnakeSnapshot.length === 0) return false;
+
+                gameState.shieldCharges -= 1;
+                updateShieldUI();
+                showShieldBlockEffect(head);
+
+                // Revert to the last safe snake position
+                gameState.snake = gameState.prevSnakeSnapshot.map(s => ({ x: s.x, y: s.y }));
+
+                // Small penalty so it's not purely free
+                if (reason === 'self' || reason === 'obstacle') {
+                    if (gameState.snake.length > 4) gameState.snake.pop();
+                }
+
+                return true;
+            }
+
             // 检查碰撞
             function checkCollision() {
                 const head = gameState.snake[0];
@@ -1180,6 +1584,7 @@
                 if(head.x < 0 || head.y < 0 || head.x >= gameSettings.gridSize || head.y >= gameSettings.gridSize) {
                     if (gameSettings.wallMode !== 'wrap') {
                         // 在结束游戏前添加碰墙的视觉效果
+                        if (tryConsumeShield('wall', head)) return;
                         showWallCollisionEffect(head);
                         endGame('wall');
                         return;
@@ -1190,6 +1595,7 @@
                 for(let i = 1; i < gameState.snake.length; i++) {
                     if(head.x === gameState.snake[i].x && head.y === gameState.snake[i].y) {
                         // 在结束游戏前添加自碰撞的视觉效果
+                        if (tryConsumeShield('self', head)) return;
                         showSelfCollisionEffect(head, i);
                         endGame('self');
                         return;
@@ -1201,6 +1607,7 @@
                     for (let i = 0; i < gameState.obstacles.length; i++) {
                         const o = gameState.obstacles[i];
                         if (head.x === o.x && head.y === o.y) {
+                            if (tryConsumeShield('obstacle', head)) return;
                             showObstacleCollisionEffect(head);
                             endGame('obstacle');
                             return;
@@ -1328,6 +1735,11 @@
                     iconElement.innerHTML = `<i class="fas fa-skull-crossbones"></i>`;
                     iconElement.style.color = "#7f8c8d"; // 灰色
                     messageElement.innerHTML = `游戏结束！<br>最终得分: <span id="final-score">${gameState.score}</span>`;
+                }
+
+                if (isAdventure()) {
+                    const lv = gameState.adventureLevel || 1;
+                    messageElement.innerHTML += `<br>到达关卡：${lv}`;
                 }
                 
                 // 显示弹窗，但延迟一下让用户看到碰撞效果
@@ -1491,37 +1903,96 @@
                     generateFood();
                 }
             }
-            
+
+            function handleLevelCompleteHotkeys(e) {
+                if (!levelCompleteModal || !levelCompleteModal.classList.contains('active')) return;
+                if (isEditableTarget(e.target)) return;
+
+                const code = e.code;
+                if (code === 'Enter' || code === 'Space') {
+                    e.preventDefault();
+                    if (nextLevelBtn) nextLevelBtn.click();
+                    return;
+                }
+                if (code === 'Escape' || code === 'Backspace' || code === 'KeyB') {
+                    e.preventDefault();
+                    if (levelExitBtn) levelExitBtn.click();
+                }
+            }
+
+            function exitToMenu() {
+                gameOverModal.classList.remove('active');
+                closeLevelCompleteModal();
+
+                gameState.gameOver = true;
+                gameState.isPaused = false;
+                if (gameState.gameLoop) {
+                    clearInterval(gameState.gameLoop);
+                    gameState.gameLoop = null;
+                }
+
+                startBtn.textContent = '开始游戏';
+                pauseBtn.disabled = true;
+                pauseBtn.textContent = '暂停';
+
+                gameState.score = 0;
+                gameState.snake = [];
+                gameState.specialItem = null;
+                gameState.activeEffect = null;
+                gameState.foodsEaten = 0;
+                gameState.speedMultiplier = 1;
+                gameState.levelSpeedFactor = 1;
+                gameState.shieldCharges = 0;
+                gameState.shieldFlashUntil = 0;
+                gameState.shieldFlashCell = null;
+
+                if (isAdventure()) {
+                    gameState.adventureLevel = 1;
+                    resetLevelProgress();
+                }
+
+                scoreDisplay.textContent = '0';
+                updateSpeedUI();
+                clearCanvas();
+            }
+
+            function startFromStartButton() {
+                closeLevelCompleteModal();
+                gameOverModal.classList.remove('active');
+
+                if (isAdventure()) {
+                    gameState.adventureLevel = 1;
+                }
+                initGame({ resetScore: true, resetShield: true });
+                applyPlayModeUI();
+                startGameLoop();
+            }
+
+            function startNextLevel() {
+                if (!isAdventure()) return;
+                closeLevelCompleteModal();
+                gameState.adventureLevel = (gameState.adventureLevel || 1) + 1;
+                initGame({ resetScore: false, resetShield: false });
+                applyPlayModeUI();
+                startGameLoop();
+            }
+             
             // 初始化函数
             function init() {
                 // 绑定事件
-                startBtn.addEventListener('click', function() {
-                    initGame();
-                    startGameLoop();
-                });
+                startBtn.addEventListener('click', startFromStartButton);
                 
                 pauseBtn.addEventListener('click', togglePause);
                 
                 playAgainBtn.addEventListener('click', function() {
                     gameOverModal.classList.remove('active');
-                    initGame();
-                    startGameLoop();
+                    startFromStartButton();
                 });
                 
                 // 添加退出按钮事件
-                exitBtn.addEventListener('click', function() {
-                    gameOverModal.classList.remove('active');
-                    // 重置，但不立即开始游戏
-                    gameState.gameOver = true;
-                    clearInterval(gameState.gameLoop);
-                    startBtn.textContent = '开始游戏';
-                    pauseBtn.disabled = true;
-                    
-                    // 显示初始界面
-                    gameState.snake = [];
-                    clearCanvas();
-                    scoreDisplay.textContent = '0';
-                });
+                exitBtn.addEventListener('click', exitToMenu);
+                if (levelExitBtn) levelExitBtn.addEventListener('click', exitToMenu);
+                if (nextLevelBtn) nextLevelBtn.addEventListener('click', startNextLevel);
                 
                 difficultyBtns.forEach(btn => {
                     btn.addEventListener('click', changeDifficulty);
@@ -1536,10 +2007,19 @@
                     applyObstaclesUI();
                     obstacleBtns.forEach(btn => btn.addEventListener('click', changeObstaclesMode));
                 }
-                
+
+                if (playModeBtns && playModeBtns.length > 0) {
+                    applyPlayModeUI();
+                    playModeBtns.forEach(btn => btn.addEventListener('click', changePlayMode));
+                } else {
+                    normalizePlayMode();
+                    applyPlayModeUI();
+                }
+                 
                 // 设置键盘控制
                 document.addEventListener('keydown', handleKeyDown);
                 document.addEventListener('keydown', handleGameOverHotkeys, { passive: false });
+                document.addEventListener('keydown', handleLevelCompleteHotkeys, { passive: false });
                 
                 // 设置触摸控制
                 setupTouchControls();
