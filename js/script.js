@@ -20,8 +20,197 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Ensure homepage Tetris preview blocks render (inject 4x4 cells if missing)
+    // Homepage Tetris preview: lightweight auto-playing mini loop.
+    // Falls back to the old CSS preview if canvas cannot be initialized.
     (function initTetrisCardPreview() {
+        function setupMiniTetris(container) {
+            if (!container) return false;
+
+            const w = 10;
+            const h = 15;
+
+            // Replace existing DOM preview with a canvas.
+            container.innerHTML = '';
+            const canvas = document.createElement('canvas');
+            canvas.width = 120;
+            canvas.height = 180;
+            canvas.setAttribute('aria-hidden', 'true');
+            container.appendChild(canvas);
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return false;
+
+            const cell = canvas.width / w;
+            const board = Array.from({ length: h }, () => Array(w).fill(null));
+
+            const PIECES = {
+                I: { c: '#3498db', r: [[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], [[0,0,1,0],[0,0,1,0],[0,0,1,0],[0,0,1,0]]] },
+                O: { c: '#f1c40f', r: [[[0,1,1,0],[0,1,1,0],[0,0,0,0],[0,0,0,0]]] },
+                T: { c: '#9b59b6', r: [[[0,1,0,0],[1,1,1,0],[0,0,0,0],[0,0,0,0]], [[0,1,0,0],[0,1,1,0],[0,1,0,0],[0,0,0,0]], [[0,0,0,0],[1,1,1,0],[0,1,0,0],[0,0,0,0]], [[0,1,0,0],[1,1,0,0],[0,1,0,0],[0,0,0,0]]] },
+                S: { c: '#2ecc71', r: [[[0,1,1,0],[1,1,0,0],[0,0,0,0],[0,0,0,0]], [[0,1,0,0],[0,1,1,0],[0,0,1,0],[0,0,0,0]]] },
+                Z: { c: '#e74c3c', r: [[[1,1,0,0],[0,1,1,0],[0,0,0,0],[0,0,0,0]], [[0,0,1,0],[0,1,1,0],[0,1,0,0],[0,0,0,0]]] },
+                J: { c: '#1abc9c', r: [[[1,0,0,0],[1,1,1,0],[0,0,0,0],[0,0,0,0]], [[0,1,1,0],[0,1,0,0],[0,1,0,0],[0,0,0,0]], [[0,0,0,0],[1,1,1,0],[0,0,1,0],[0,0,0,0]], [[0,1,0,0],[0,1,0,0],[1,1,0,0],[0,0,0,0]]] },
+                L: { c: '#e67e22', r: [[[0,0,1,0],[1,1,1,0],[0,0,0,0],[0,0,0,0]], [[0,1,0,0],[0,1,0,0],[0,1,1,0],[0,0,0,0]], [[0,0,0,0],[1,1,1,0],[1,0,0,0],[0,0,0,0]], [[1,1,0,0],[0,1,0,0],[0,1,0,0],[0,0,0,0]]] },
+            };
+
+            function randBag() {
+                const keys = Object.keys(PIECES);
+                for (let i = keys.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [keys[i], keys[j]] = [keys[j], keys[i]];
+                }
+                return keys;
+            }
+
+            let bag = randBag();
+            let piece = null;
+            let dropMs = 280;
+            let acc = 0;
+            let last = performance.now();
+
+            function spawn() {
+                if (bag.length === 0) bag = randBag();
+                const type = bag.pop();
+                const rot = 0;
+                piece = { type, rot, x: 3, y: -1 };
+                // quick collision at spawn => reset board
+                if (collides(piece.x, piece.y, piece.rot)) {
+                    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) board[y][x] = null;
+                }
+            }
+
+            function matrixFor(t, r) {
+                const rots = PIECES[t].r;
+                return rots[r % rots.length];
+            }
+
+            function collides(nx, ny, nrot) {
+                const m = matrixFor(piece.type, nrot);
+                for (let y = 0; y < 4; y++) {
+                    for (let x = 0; x < 4; x++) {
+                        if (!m[y][x]) continue;
+                        const bx = nx + x;
+                        const by = ny + y;
+                        if (bx < 0 || bx >= w || by >= h) return true;
+                        if (by >= 0 && board[by][bx]) return true;
+                    }
+                }
+                return false;
+            }
+
+            function lock() {
+                const m = matrixFor(piece.type, piece.rot);
+                for (let y = 0; y < 4; y++) {
+                    for (let x = 0; x < 4; x++) {
+                        if (!m[y][x]) continue;
+                        const bx = piece.x + x;
+                        const by = piece.y + y;
+                        if (by >= 0 && by < h && bx >= 0 && bx < w) board[by][bx] = PIECES[piece.type].c;
+                    }
+                }
+                clearLines();
+                spawn();
+            }
+
+            function clearLines() {
+                for (let y = h - 1; y >= 0; y--) {
+                    if (board[y].every(Boolean)) {
+                        board.splice(y, 1);
+                        board.unshift(Array(w).fill(null));
+                        y++;
+                    }
+                }
+            }
+
+            function maybeNudge() {
+                // Tiny "auto-play" behavior: random shifts/rotations that are valid.
+                if (!piece) return;
+                const r = Math.random();
+                if (r < 0.22) {
+                    const dir = Math.random() < 0.5 ? -1 : 1;
+                    if (!collides(piece.x + dir, piece.y, piece.rot)) piece.x += dir;
+                } else if (r < 0.32) {
+                    const nr = piece.rot + 1;
+                    if (!collides(piece.x, piece.y, nr)) piece.rot = nr;
+                }
+            }
+
+            function step() {
+                if (!piece) spawn();
+                maybeNudge();
+                if (!collides(piece.x, piece.y + 1, piece.rot)) {
+                    piece.y += 1;
+                } else {
+                    lock();
+                }
+            }
+
+            function drawCell(x, y, color) {
+                const px = x * cell;
+                const py = y * cell;
+                ctx.fillStyle = color;
+                ctx.fillRect(px + 1, py + 1, cell - 2, cell - 2);
+                ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+                ctx.strokeRect(px + 1, py + 1, cell - 2, cell - 2);
+            }
+
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // board
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const c = board[y][x];
+                        if (c) drawCell(x, y, c);
+                    }
+                }
+
+                // piece
+                if (piece) {
+                    const m = matrixFor(piece.type, piece.rot);
+                    const color = PIECES[piece.type].c;
+                    for (let y = 0; y < 4; y++) {
+                        for (let x = 0; x < 4; x++) {
+                            if (!m[y][x]) continue;
+                            const bx = piece.x + x;
+                            const by = piece.y + y;
+                            if (by >= 0) drawCell(bx, by, color);
+                        }
+                    }
+                }
+            }
+
+            function loop(now) {
+                const dt = now - last;
+                last = now;
+                acc += dt;
+
+                if (acc >= dropMs) {
+                    const steps = Math.min(3, Math.floor(acc / dropMs));
+                    acc -= steps * dropMs;
+                    for (let i = 0; i < steps; i++) step();
+                    // vary speed slightly for life-like feel
+                    dropMs = 240 + Math.floor(Math.random() * 90);
+                }
+
+                render();
+                window.requestAnimationFrame(loop);
+            }
+
+            spawn();
+            window.requestAnimationFrame(loop);
+            return true;
+        }
+
+        // Primary: canvas-based mini tetris in the homepage card
+        const grids = document.querySelectorAll('.tetris-grid-preview');
+        let ok = false;
+        grids.forEach(g => {
+            ok = setupMiniTetris(g) || ok;
+        });
+        if (ok) return;
+
+        // Fallback: ensure old DOM preview blocks render (inject 4x4 cells if missing)
         const previews = document.querySelectorAll('.tetromino-preview');
         if (!previews || previews.length === 0) return;
         previews.forEach(el => {

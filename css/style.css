@@ -560,6 +560,12 @@ a:hover {
         linear-gradient(90deg, var(--tetris-grid-line) 1px, transparent 1px);
     background-size: 12px 12px; /* 单元格大小 */
 }
+
+.tetris-grid-preview canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
 .tetromino-preview {
     position: absolute;
     display: grid;
