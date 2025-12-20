@@ -1,0 +1,191 @@
+/* Platformer page styles (used by game_platformer.html) */
+
+.game-details {
+    padding-top: 110px; /* avoid navbar overlap */
+}
+
+.platformer-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    background-color: var(--background-light);
+    border-radius: var(--border-radius);
+    font-weight: 600;
+}
+
+.platformer-stats .stat strong {
+    color: var(--primary-color);
+}
+
+.platformer-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    align-items: start;
+}
+
+.platformer-board {
+    position: relative;
+    width: 100%;
+    max-width: 980px;
+    margin: 0 auto;
+    aspect-ratio: 16 / 9;
+    background: linear-gradient(180deg, rgba(137, 207, 240, 0.45), rgba(240, 248, 255, 0.2));
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+}
+
+#platformer-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+}
+
+.platformer-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    text-align: center;
+}
+
+.platformer-overlay.active {
+    display: flex;
+}
+
+.platformer-overlay-card {
+    width: min(520px, 100%);
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: var(--border-radius);
+    padding: 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.platformer-overlay-card h2 {
+    margin-bottom: 8px;
+}
+
+.platformer-overlay-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.platformer-overlay-actions .btn {
+    min-width: 160px;
+}
+
+.platformer-hint {
+    margin-top: 10px;
+    color: rgba(0, 0, 0, 0.72);
+    font-size: 0.95rem;
+}
+
+.platformer-rules {
+    background: rgba(26, 35, 126, 0.06);
+    border: 1px solid rgba(26, 35, 126, 0.14);
+    border-radius: var(--border-radius);
+    padding: 12px 14px;
+    margin-bottom: 14px;
+}
+
+.platformer-rules h3 {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.platformer-rules h3 i {
+    color: var(--secondary-color);
+}
+
+.platformer-rules ul {
+    margin: 0;
+    padding-left: 18px;
+    color: #333;
+}
+
+.platformer-rules li {
+    margin: 6px 0;
+    line-height: 1.5;
+}
+
+.platformer-controls-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.platformer-controls-row .btn {
+    min-width: 160px;
+}
+
+.platformer-touch {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.platformer-touch .control-btn {
+    width: 60px;
+    height: 52px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.platformer-touch .control-btn.secondary {
+    background-color: rgba(255, 255, 255, 0.9);
+    color: var(--primary-color);
+    border: 1px solid rgba(26, 35, 126, 0.18);
+}
+
+.platformer-touch .control-btn.secondary:hover {
+    background-color: rgba(255, 255, 255, 1);
+}
+
+.platformer-touch .control-btn.danger {
+    background-color: rgba(231, 76, 60, 0.9);
+}
+
+.platformer-touch .control-btn.danger:hover {
+    background-color: rgba(231, 76, 60, 1);
+}
+
+.platformer-touch-note {
+    text-align: center;
+    color: rgba(0, 0, 0, 0.65);
+    font-size: 0.95rem;
+    margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+    .platformer-overlay-actions .btn,
+    .platformer-controls-row .btn {
+        width: 100%;
+        min-width: unset;
+    }
+
+    .platformer-stats {
+        justify-content: center;
+    }
+}
+

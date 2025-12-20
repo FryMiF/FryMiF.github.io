@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1a237e">
+    <title>&#x65B9;&#x5757;&#x95EF;&#x5173;&#xFF1A;&#x8DF3;&#x8DC3;&#x5192;&#x9669; - &#x8FF7;&#x4F60;&#x6E38;&#x620F;&#x5408;&#x96C6;</title>
+    <meta name="description" content="Original side-scrolling platformer: run, jump, stomp, collect coins, reach the goal.">
+
+    <link rel="preconnect" href="https://fonts.lug.ustc.edu.cn">
+    <link href="https://fonts.lug.ustc.edu.cn/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/6.0.0/css/all.min.css">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/platformer.css">
+</head>
+<body>
+    <div class="page-background"></div>
+
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">&#x8FF7;&#x4F60;&#x6E38;&#x620F;&#x5408;&#x96C6;</a>
+            <div class="menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">&#x8FD4;&#x56DE;&#x9996;&#x9875;</a></li>
+                <li class="github-link">
+                    <a href="https://github.com/FryMiF/frymif.github.io" target="_blank" title="GitHub">
+                        <i class="fab fa-github"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="section game-details">
+        <div class="container">
+            <div class="game-container">
+                <div class="game-header">
+                    <a href="index.html" class="btn back-btn">
+                        <i class="fas fa-arrow-left"></i> &#x8FD4;&#x56DE;
+                    </a>
+                    <h1 id="platformer-title">&#x65B9;&#x5757;&#x95EF;&#x5173;&#xFF1A;&#x8DF3;&#x8DC3;&#x5192;&#x9669;</h1>
+                </div>
+
+                <div class="game-description" id="platformer-rules"></div>
+
+                <div class="platformer-layout">
+                    <div class="platformer-stats">
+                        <div class="stat"><strong>&#x5173;&#x5361;&#xFF1A;</strong> <span id="level-display">--</span></div>
+                        <div class="stat"><strong>&#x91D1;&#x5E01;&#xFF1A;</strong> <span id="coins-display">0</span>/<span id="coins-total-display">0</span></div>
+                        <div class="stat"><strong>&#x751F;&#x547D;&#xFF1A;</strong> <span id="lives-display">3</span></div>
+                        <div class="stat"><strong>&#x7528;&#x65F6;&#xFF1A;</strong> <span id="time-display">00:00.0</span></div>
+                    </div>
+
+                    <div class="platformer-board" id="platformer-board">
+                        <canvas id="platformer-canvas" width="960" height="540" aria-label="platformer canvas"></canvas>
+
+                        <div class="platformer-overlay" id="platformer-overlay" aria-hidden="true">
+                            <div class="platformer-overlay-card">
+                                <h2 id="overlay-title">--</h2>
+                                <p id="overlay-subtitle">--</p>
+                                <div class="platformer-overlay-actions">
+                                    <button class="btn" id="overlay-primary-btn" type="button">--</button>
+                                    <button class="btn" id="overlay-secondary-btn" type="button">--</button>
+                                </div>
+                                <div class="platformer-hint" id="overlay-hint"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="platformer-controls-row" aria-label="controls">
+                        <button class="btn" id="pause-btn" type="button"><i class="fas fa-pause"></i> &#x6682;&#x505C;</button>
+                        <button class="btn btn-secondary" id="restart-btn" type="button"><i class="fas fa-rotate-right"></i> &#x91CD;&#x65B0;&#x5F00;&#x59CB;</button>
+                    </div>
+
+                    <div class="platformer-touch" id="platformer-touch" aria-label="touch controls">
+                        <button class="btn control-btn" type="button" data-action="left" aria-label="left"><i class="fas fa-arrow-left"></i></button>
+                        <button class="btn control-btn" type="button" data-action="jump" aria-label="jump"><i class="fas fa-arrow-up"></i></button>
+                        <button class="btn control-btn" type="button" data-action="right" aria-label="right"><i class="fas fa-arrow-right"></i></button>
+                        <button class="btn control-btn secondary" type="button" data-action="sprint" aria-label="sprint"><i class="fas fa-bolt"></i></button>
+                        <button class="btn control-btn danger" type="button" data-action="pause" aria-label="pause"><i class="fas fa-pause"></i></button>
+                    </div>
+                    <div class="platformer-touch-note" id="platformer-touch-note"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="js/script.js"></script>
+    <script src="js/platformer.js"></script>
+</body>
+</html>
+
