@@ -597,6 +597,7 @@
                             <li><i class="fas fa-mobile-alt"></i> 移动端：点击屏幕下方的方向按钮控制</li>
                             <li><i class="fas fa-apple-alt"></i> 吃到食物：增加1分，蛇身变长</li>
                             <li><i class="fas fa-flag"></i> 冒险关卡：每关都有目标，完成后进入下一关（速度更快/更难）</li>
+                            <li><i class="fas fa-skull"></i> Boss关：每5关出现一次，紫色障碍物会移动</li>
                             <li><i class="fas fa-cube"></i> 特殊物品：B加分 / S减速 / F加速 / D护盾（抵消一次碰撞） / C缩身（减少长度）</li>
                             <li><i class="fas fa-right-left"></i> 模式：可穿墙 / 碰墙失败（在难度下方切换）</li>
                             <li><i class="fas fa-skull-crossbones"></i> 游戏结束：碰到自己的身体（障碍物开启时也会结束；碰墙失败模式会因撞墙结束）</li>
@@ -676,6 +677,7 @@
             const playModeBtns = document.querySelectorAll('.playmode-btn');
             const questPanel = document.getElementById('quest-panel');
             const questLevelEl = document.getElementById('quest-level');
+            const questBadgeEl = document.getElementById('quest-badge');
             const questDescEl = document.getElementById('quest-desc');
             const questProgressEl = document.getElementById('quest-progress');
             const exitBtn = document.getElementById('exit-btn');
@@ -748,6 +750,7 @@
                 levelSpeedFactor: 1,
                 levelReq: null, // {foods, bonus, shield, shrink}
                 levelProgress: { foods: 0, bonus: 0, shield: 0, shrink: 0 },
+                obstacleMoveCounter: 0,
                 direction: 'right',
                 nextDirection: 'right',
                 score: 0,
@@ -822,6 +825,25 @@
                 return Math.max(0.6, 1 - (lv - 1) * 0.05);
             }
 
+            function isBossLevel(level) {
+                const lv = Math.max(1, Number(level) || 1);
+                return lv % 5 === 0;
+            }
+
+            function shouldUseMovingObstacles() {
+                return isAdventure() && isBossLevel(gameState.adventureLevel || 1) && gameSettings.obstaclesMode === 'on';
+            }
+
+            function getMovingObstacleCount(level) {
+                const lv = Math.max(1, Number(level) || 1);
+                return Math.min(8, 3 + Math.floor(lv / 5)); // 5->4,10->5,15->6...
+            }
+
+            function randomDirection() {
+                const dirs = ['up', 'down', 'left', 'right'];
+                return dirs[Math.floor(Math.random() * dirs.length)];
+            }
+
             function getLevelRequirements(level) {
                 const lv = Math.max(1, Number(level) || 1);
                 const foods = 5 + (lv - 1) * 2;
@@ -838,6 +860,7 @@
                 const lv = gameState.adventureLevel || 1;
                 gameState.levelReq = getLevelRequirements(lv);
                 gameState.levelSpeedFactor = isAdventure() ? calcLevelSpeedFactor(lv) : 1;
+                gameState.obstacleMoveCounter = 0;
             }
 
             function buildQuestDescription(req) {
@@ -846,7 +869,8 @@
                 if (req.bonus) parts.push(`拾取 ${req.bonus} 个加分物品(B)`);
                 if (req.shield) parts.push(`拾取 ${req.shield} 个护盾(D)`);
                 if (req.shrink) parts.push(`拾取 ${req.shrink} 个缩身(C)`);
-                return '目标：' + parts.join('，') + '。';
+                const bossNote = isBossLevel(gameState.adventureLevel || 1) ? '（Boss关：障碍物会移动）' : '';
+                return '目标：' + parts.join('，') + '。' + bossNote;
             }
 
             function buildQuestProgressText(req, prog) {
@@ -869,6 +893,7 @@
 
                 if (levelDisplay) levelDisplay.textContent = String(lv);
                 if (questLevelEl) questLevelEl.textContent = `关卡 ${lv}`;
+                if (questBadgeEl) questBadgeEl.textContent = isBossLevel(lv) ? 'Boss关' : '任务';
                 if (questDescEl) questDescEl.textContent = buildQuestDescription(req);
                 if (questProgressEl) questProgressEl.textContent = buildQuestProgressText(req, prog);
             }
@@ -978,6 +1003,7 @@
                     if(!gameState.isPaused && !gameState.gameOver) {
                         tickTimedEffects();
                         gameState.prevSnakeSnapshot = gameState.snake.map(s => ({ x: s.x, y: s.y }));
+                        moveObstacles();
                         moveSnake();
                         checkCollision();
                         if(!gameState.gameOver) {
@@ -1193,8 +1219,6 @@
                 
                 const cellSize = canvas.width / gameSettings.gridSize;
                 ctx.save();
-                ctx.fillStyle = 'rgba(33, 33, 33, 0.35)';
-                ctx.strokeStyle = 'rgba(33, 33, 33, 0.6)';
                 ctx.lineWidth = Math.max(1, cellSize * 0.05);
                 
                 for (let i = 0; i < gameState.obstacles.length; i++) {
@@ -1202,6 +1226,10 @@
                     const x = o.x * cellSize;
                     const y = o.y * cellSize;
                     const pad = cellSize * 0.12;
+
+                    const isMoving = !!o.moving;
+                    ctx.fillStyle = isMoving ? 'rgba(155, 89, 182, 0.32)' : 'rgba(33, 33, 33, 0.35)';
+                    ctx.strokeStyle = isMoving ? 'rgba(155, 89, 182, 0.65)' : 'rgba(33, 33, 33, 0.6)';
                     ctx.beginPath();
                     roundRectCompat(ctx, x + pad, y + pad, cellSize - pad * 2, cellSize - pad * 2, cellSize * 0.18);
                     ctx.fill();
@@ -1294,6 +1322,16 @@
                     if (overlaps) continue;
                     obstacles.push({ x, y });
                 }
+
+                if (shouldUseMovingObstacles()) {
+                    const movers = Math.min(getMovingObstacleCount(gameState.adventureLevel || 1), obstacles.length);
+                    for (let i = 0; i < movers; i++) {
+                        obstacles[i].moving = true;
+                        obstacles[i].dir = randomDirection();
+                        obstacles[i].moveEvery = 2; // ticks
+                        obstacles[i].moveCounter = 0;
+                    }
+                }
                 
                 return obstacles;
             }
@@ -1324,6 +1362,103 @@
                     gameState.speedMultiplier = 1;
                     updateSpeedUI();
                     startGameLoop();
+                }
+            }
+
+            function cellKey(x, y) {
+                return x + ',' + y;
+            }
+
+            function buildBlockedSet(includeFoodAndSpecial) {
+                const set = new Set();
+                if (gameState.snake && gameState.snake.length > 0) {
+                    for (let s of gameState.snake) set.add(cellKey(s.x, s.y));
+                }
+                if (includeFoodAndSpecial) {
+                    if (gameState.food && typeof gameState.food.x === 'number') set.add(cellKey(gameState.food.x, gameState.food.y));
+                    if (gameState.specialItem && typeof gameState.specialItem.x === 'number') set.add(cellKey(gameState.specialItem.x, gameState.specialItem.y));
+                }
+                return set;
+            }
+
+            function moveObstacles() {
+                if (!shouldUseMovingObstacles()) return;
+                if (!gameState.obstacles || gameState.obstacles.length === 0) return;
+
+                const blocked = buildBlockedSet(true);
+                const occupied = new Set();
+                for (let o of gameState.obstacles) occupied.add(cellKey(o.x, o.y));
+
+                const nextPositions = new Map();
+
+                for (let i = 0; i < gameState.obstacles.length; i++) {
+                    const o = gameState.obstacles[i];
+                    if (!o.moving) continue;
+
+                    o.moveCounter = (o.moveCounter || 0) + 1;
+                    const moveEvery = o.moveEvery || 2;
+                    if (o.moveCounter < moveEvery) continue;
+                    o.moveCounter = 0;
+
+                    const tryDirs = [o.dir, 'up', 'down', 'left', 'right'];
+                    let moved = false;
+                    for (let t = 0; t < tryDirs.length; t++) {
+                        const dir = tryDirs[t];
+                        let nx = o.x;
+                        let ny = o.y;
+                        if (dir === 'up') ny -= 1;
+                        else if (dir === 'down') ny += 1;
+                        else if (dir === 'left') nx -= 1;
+                        else if (dir === 'right') nx += 1;
+
+                        if (nx < 0 || ny < 0 || nx >= gameSettings.gridSize || ny >= gameSettings.gridSize) continue;
+                        const k = cellKey(nx, ny);
+                        if (blocked.has(k)) continue;
+                        if (occupied.has(k)) continue;
+                        if (nextPositions.has(k)) continue;
+
+                        // Reserve new cell; free old cell in occupied after move
+                        nextPositions.set(k, { idx: i, x: nx, y: ny, dir });
+                        moved = true;
+                        break;
+                    }
+
+                    if (!moved) {
+                        // Randomize direction to avoid getting stuck
+                        o.dir = randomDirection();
+                    }
+                }
+
+                if (nextPositions.size === 0) return;
+
+                // Apply reserved moves
+                for (let [k, v] of nextPositions.entries()) {
+                    const o = gameState.obstacles[v.idx];
+                    occupied.delete(cellKey(o.x, o.y));
+                    o.x = v.x;
+                    o.y = v.y;
+                    o.dir = v.dir;
+                    occupied.add(k);
+                }
+
+                // If obstacles moved onto food/special due to earlier state, regenerate
+                if (gameState.food && occupied.has(cellKey(gameState.food.x, gameState.food.y))) {
+                    generateFood();
+                }
+                if (gameState.specialItem && occupied.has(cellKey(gameState.specialItem.x, gameState.specialItem.y))) {
+                    gameState.specialItem = null;
+                }
+
+                // Crush check: if any obstacle moved into snake cells, treat as collision
+                const snakeCells = buildBlockedSet(false);
+                for (let o of gameState.obstacles) {
+                    if (snakeCells.has(cellKey(o.x, o.y))) {
+                        const head = gameState.snake[0];
+                        if (tryConsumeShield('obstacle', head)) return;
+                        showObstacleCollisionEffect(head);
+                        endGame('obstacle');
+                        return;
+                    }
                 }
             }
             
