@@ -141,6 +141,11 @@
             color: var(--text-color);
             opacity: 0.9;
             min-height: 1.2em;
+            white-space: pre-line;
+            background: rgba(0, 188, 212, 0.08);
+            border: 1px solid rgba(0, 188, 212, 0.25);
+            border-radius: var(--border-radius);
+            padding: 10px 12px;
         }
         
         .difficulty-btn {
@@ -560,13 +565,13 @@
                 const best = readDailyBest();
                 const dateKey = getLocalDateKey();
                 const gridKey = getGridKey();
+                const header = `\u4ECA\u65E5\u6311\u6218 ${dateKey} (${gridKey})`;
+                const rules = `\u89C4\u5219\uFF1A\u540C\u4E00\u5929\u540C\u96BE\u5EA6\u724C\u9762\u56FA\u5B9A\uFF1B\u9884\u89C8/\u63D0\u793A\u4E0D\u53EF\u7528\u3002`;
 
                 if (best) {
-                    dailyInfoEl.textContent =
-                        `\u4eca\u65e5\u6311\u6218 ${dateKey} (${gridKey}) \u6700\u4f73\uff1a ${best.moves} \u6b65 / ${formatMMSS(best.seconds)}`;
+                    dailyInfoEl.textContent = `${header}\n${rules}\n\u6700\u4F73\uFF1A ${best.moves} \u6B65 / ${formatMMSS(best.seconds)}`;
                 } else {
-                    dailyInfoEl.textContent =
-                        `\u4eca\u65e5\u6311\u6218 ${dateKey} (${gridKey}) \u5c1a\u65e0\u8bb0\u5f55\uff0c\u51b2\u51fa\u9996\u8bb0\u5f55\uff01`;
+                    dailyInfoEl.textContent = `${header}\n${rules}\n\u5C1A\u65E0\u8BB0\u5F55\uFF0C\u51B2\u51FA\u9996\u8BB0\u5F55\uFF01`;
                 }
             }
 

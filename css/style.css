@@ -112,6 +112,30 @@ a:hover {
     color: var(--text-light);
 }
 
+.btn:disabled,
+.btn[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    filter: grayscale(25%);
+}
+
+.btn:disabled:hover,
+.btn[disabled]:hover {
+    background-color: var(--primary-color);
+    transform: none;
+}
+
+.btn.btn-secondary:disabled,
+.btn.btn-secondary[disabled] {
+    background-color: var(--secondary-color);
+}
+
+.btn.btn-secondary:disabled:hover,
+.btn.btn-secondary[disabled]:hover {
+    background-color: var(--secondary-color);
+}
+
 .btn-secondary {
     background-color: var(--secondary-color);
 }
