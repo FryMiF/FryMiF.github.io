@@ -113,14 +113,14 @@
                                 <div class="tetromino-preview l-shape" style="top: 50%; left: 50%;"></div>
                                 <div class="tetromino-preview i-shape" style="top: 70%; left: 10%;"></div>
                                 <div class="tetromino-preview o-shape" style="top: 10%; left: 60%;"></div>
-                                 <div class="tetromino-preview s-shape falling-block" style="left: 40%;"></div>
+                                <div class="tetromino-preview s-shape falling-block" style="left: 40%;"></div>
                             </div>
                         </div>
-                        </div>
+                    </div>
                     <div class="game-content">
                         <h3>俄罗斯方块</h3>
                         <p>经典的俄罗斯方块游戏，挑战你的空间想象力和反应速度。</p>
-                        <a href="#" class="btn" style="background-color: #888;">敬请期待</a>
+                        <a href="game_tetris.html" class="btn">开始游戏</a>
                     </div>
                 </div>
                 
@@ -167,42 +167,54 @@
     <section id="team" class="team-showcase section">
         <div class="container">
             <h2 class="section-title">开发团队</h2>
-            <div class="team-circle-container fade-in">
-                <div class="team-ring"></div>
-                
-                <div class="team-logo">
-                    <i class="fas fa-users"></i>
-                </div>
-                
-                <div class="team-member">
-                    <div class="member-content">
-                        <h3>黄梓桉</h3>
-                        <div class="member-skills">
-                            <span class="skill-tag"><i class="fas fa-gamepad"></i> 游戏开发</span>
-                            <span class="skill-tag"><i class="fas fa-code"></i> 前端开发</span>
+            <div class="team-grid fade-in">
+                <article class="team-card" tabindex="0">
+                    <div class="team-card-header">
+                        <div class="team-card-icon" aria-hidden="true"><i class="fas fa-gamepad"></i></div>
+                        <div class="team-card-title">
+                            <h3>黄梓桉</h3>
+                            <p class="team-card-subtitle">游戏开发 · 前端开发</p>
                         </div>
                     </div>
-                </div>
-                
-                <div class="team-member">
-                    <div class="member-content">
-                        <h3>邓凯 <small>组长</small></h3>
-                        <div class="member-skills">
-                            <span class="skill-tag"><i class="fas fa-cogs"></i> 核心开发</span>
-                            <span class="skill-tag"><i class="fas fa-server"></i> 网站部署</span>
+                    <p class="team-card-desc">负责游戏玩法实现与页面交互，打磨动画与操作体验。</p>
+                    <div class="team-tags" aria-label="技能标签">
+                        <span class="team-tag"><i class="fas fa-gamepad"></i> 游戏</span>
+                        <span class="team-tag"><i class="fas fa-code"></i> 前端</span>
+                        <span class="team-tag"><i class="fas fa-wand-magic-sparkles"></i> 动效</span>
+                    </div>
+                </article>
+
+                <article class="team-card" tabindex="0">
+                    <div class="team-card-header">
+                        <div class="team-card-icon" aria-hidden="true"><i class="fas fa-cogs"></i></div>
+                        <div class="team-card-title">
+                            <h3>邓凯 <small>组长</small></h3>
+                            <p class="team-card-subtitle">核心开发 · 网站部署</p>
                         </div>
                     </div>
-                </div>
-                
-                <div class="team-member">
-                    <div class="member-content">
-                        <h3>黄景涛</h3>
-                        <div class="member-skills">
-                            <span class="skill-tag"><i class="fas fa-gamepad"></i> 游戏开发</span>
-                            <span class="skill-tag"><i class="fas fa-code"></i> 前端开发</span>
+                    <p class="team-card-desc">统筹功能落地与版本整合，处理部署发布与站点结构优化。</p>
+                    <div class="team-tags" aria-label="技能标签">
+                        <span class="team-tag"><i class="fas fa-cogs"></i> 核心</span>
+                        <span class="team-tag"><i class="fas fa-server"></i> 部署</span>
+                        <span class="team-tag"><i class="fas fa-sitemap"></i> 架构</span>
+                    </div>
+                </article>
+
+                <article class="team-card" tabindex="0">
+                    <div class="team-card-header">
+                        <div class="team-card-icon" aria-hidden="true"><i class="fas fa-code"></i></div>
+                        <div class="team-card-title">
+                            <h3>黄景涛</h3>
+                            <p class="team-card-subtitle">游戏开发 · 前端开发</p>
                         </div>
                     </div>
-                </div>
+                    <p class="team-card-desc">负责前端页面与小游戏逻辑，完善移动端适配与交互细节。</p>
+                    <div class="team-tags" aria-label="技能标签">
+                        <span class="team-tag"><i class="fas fa-code"></i> 前端</span>
+                        <span class="team-tag"><i class="fas fa-gamepad"></i> 游戏</span>
+                        <span class="team-tag"><i class="fas fa-mobile-screen"></i> 移动端</span>
+                    </div>
+                </article>
             </div>
             <div class="team-description text-center fade-in">
                 <div class="typewriter-outer-container">

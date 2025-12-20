@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1a237e">
+    <title>俄罗斯方块 - 迷你游戏合集</title>
+    <meta name="description" content="经典俄罗斯方块：旋转、消行、升级加速，支持键盘与触摸操作">
+    
+    <!-- 字体 -->
+    <link rel="preconnect" href="https://fonts.lug.ustc.edu.cn">
+    <link href="https://fonts.lug.ustc.edu.cn/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- 图标库 -->
+    <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- 自定义样式 -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/tetris.css">
+</head>
+<body>
+    <!-- 添加全屏背景层 -->
+    <div class="page-background"></div>
+    
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">迷你游戏合集</a>
+            <div class="menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">返回首页</a></li>
+                <li class="github-link">
+                    <a href="https://github.com/FryMiF/frymif.github.io" target="_blank" title="GitHub仓库">
+                        <i class="fab fa-github"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- 游戏详情 -->
+    <section class="section game-details">
+        <div class="container">
+            <div class="game-container">
+                <div class="game-header">
+                    <a href="index.html" class="btn back-btn">
+                        <i class="fas fa-arrow-left"></i> 返回
+                    </a>
+                    <h1>俄罗斯方块</h1>
+                </div>
+                
+                <div class="game-description">
+                    <p>旋转方块、消除整行、不断升级加速。支持键盘与触摸操作，看看你能打到多少分！</p>
+                </div>
+                
+                <div class="tetris-game">
+                    <div class="tetris-stats">
+                        <div class="stat"><strong>分数：</strong> <span id="score-display">0</span></div>
+                        <div class="stat"><strong>行数：</strong> <span id="lines-display">0</span></div>
+                        <div class="stat"><strong>等级：</strong> <span id="level-display">1</span></div>
+                        <div class="stat"><strong>最高分：</strong> <span id="best-display">0</span></div>
+                    </div>
+
+                    <div class="tetris-modes" aria-label="tetris modes">
+                        <div class="tetris-mode-selector">
+                            <button class="btn mode-btn active" type="button" data-mode="endless">Endless</button>
+                            <button class="btn mode-btn" type="button" data-mode="sprint40">Sprint 40</button>
+                        </div>
+                        <div class="tetris-extra-stats">
+                            <div class="stat"><strong>&#x65F6;&#x95F4;&#xFF1A;</strong> <span id="time-display">00:00</span></div>
+                            <div class="stat"><strong>Sprint:</strong> <span id="sprint-display">--</span></div>
+                            <div class="stat"><strong>&#x6700;&#x4F73;&#xFF1A;</strong> <span id="best-sprint-display">--:--</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="tetris-layout">
+                        <div class="tetris-main">
+                            <div class="tetris-board" id="tetris-board">
+                                <canvas id="tetris-canvas"></canvas>
+                                
+                                <div class="tetris-overlay" id="tetris-overlay" aria-hidden="true">
+                                    <div class="tetris-overlay-card">
+                                        <h2 id="overlay-title">暂停</h2>
+                                        <p id="overlay-subtitle">按 P 或点击按钮继续</p>
+                                        <div class="tetris-overlay-actions">
+                                            <button class="btn" id="resume-btn">继续</button>
+                                            <button class="btn" id="restart-btn">重新开始</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="tetris-touch" aria-label="触摸控制">
+                                <button class="btn control-btn" data-action="left"><i class="fas fa-arrow-left"></i></button>
+                                <button class="btn control-btn" data-action="rotate"><i class="fas fa-rotate-right"></i></button>
+                                <button class="btn control-btn" data-action="right"><i class="fas fa-arrow-right"></i></button>
+                                <button class="btn control-btn secondary" data-action="down"><i class="fas fa-arrow-down"></i></button>
+                                <button class="btn control-btn secondary" data-action="drop"><i class="fas fa-angles-down"></i></button>
+                                <button class="btn control-btn secondary" data-action="hold"><i class="fas fa-box"></i></button>
+                                <button class="btn control-btn danger" data-action="pause"><i class="fas fa-pause"></i></button>
+                            </div>
+                        </div>
+                        
+                        <aside class="tetris-side">
+                            <div class="panel">
+                                <h3>下一个</h3>
+                                <canvas id="next-canvas" class="mini-canvas" width="240" height="240"></canvas>
+                            </div>
+                            <div class="panel">
+                                <h3>暂存</h3>
+                                <canvas id="hold-canvas" class="mini-canvas" width="240" height="240"></canvas>
+                                <div class="hint">Shift / C（每块仅一次）</div>
+                            </div>
+                            <div class="panel">
+                                <h3>键盘操作</h3>
+                                <ul class="controls-list">
+                                    <li>← / →：左右移动</li>
+                                    <li>↑ 或 X：顺时针旋转</li>
+                                    <li>Z：逆时针旋转</li>
+                                    <li>↓：软降</li>
+                                    <li>Space：硬降</li>
+                                    <li>Shift / C：暂存</li>
+                                    <li>P：暂停 / 继续</li>
+                                    <li>R：重新开始</li>
+                                </ul>
+                            </div>
+                        </aside>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 迷你游戏合集团队 - 网站建设项目</p>
+        </div>
+    </footer>
+    
+    <!-- JavaScript -->
+    <script src="js/script.js"></script>
+    <script src="js/tetris.js"></script>
+</body>
+</html>

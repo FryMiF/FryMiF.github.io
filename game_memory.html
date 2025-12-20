@@ -110,6 +110,38 @@
             margin-bottom: 20px;
             gap: 10px;
         }
+
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .memory-mode-btn {
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            border: none;
+            background-color: var(--background-light);
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .memory-mode-btn.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .daily-info {
+            text-align: center;
+            margin-bottom: 16px;
+            font-size: 0.95rem;
+            color: var(--text-color);
+            opacity: 0.9;
+            min-height: 1.2em;
+        }
         
         .difficulty-btn {
             padding: 8px 15px;
@@ -167,6 +199,21 @@
             margin: 20px 0;
             font-size: 2rem;
             color: #ffc107;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+
+        .hotkeys-hint {
+            margin-top: 12px;
+            font-size: 0.95rem;
+            color: var(--text-color);
+            opacity: 0.75;
         }
         
         /* 响应式设计 */
@@ -276,6 +323,14 @@
                 </div>
                 
                 <div class="memory-game-container">
+                    <div class="memory-mode-panel">
+                        <div class="mode-selector" role="group" aria-label="Memory mode">
+                            <button class="memory-mode-btn active" data-mode="normal" type="button">&#x666E;&#x901A;</button>
+                            <button class="memory-mode-btn" data-mode="daily" type="button">&#x4ECA;&#x65E5;&#x6311;&#x6218;</button>
+                        </div>
+                        <div class="daily-info" id="daily-info" aria-live="polite"></div>
+                    </div>
+
                     <!-- 游戏统计信息 -->
                     <div class="memory-stats">
                         <div class="stat">
@@ -283,6 +338,9 @@
                         </div>
                         <div class="stat">
                             <strong>时间：</strong> <span id="time-counter">00:00</span>
+                        </div>
+                        <div class="stat">
+                            <strong>最少步数记录：</strong> <span id="best-score-display">-</span>
                         </div>
                     </div>
                     
@@ -301,6 +359,8 @@
                     <!-- 游戏控制按钮 -->
                     <div class="controls">
                         <button class="btn" id="reset-btn">重新开始</button>
+                        <button class="btn btn-secondary" id="preview-btn" type="button">&#x9884;&#x89C8;</button>
+                        <button class="btn btn-secondary" id="hint-btn" type="button">&#x63D0;&#x793A; (<span id="hint-remaining">0</span>)</button>
                     </div>
                 </div>
                 
@@ -315,7 +375,13 @@
                             <i class="fas fa-star"></i>
                         </div>
                         <p>你用了 <span id="final-moves">0</span> 步，耗时 <span id="final-time">00:00</span></p>
-                        <button class="btn" id="play-again-btn">再玩一次</button>
+                        <div class="modal-actions">
+                            <button class="btn" id="play-again-btn">&#x518D;&#x73A9;&#x4E00;&#x6B21;</button>
+                            <button class="btn btn-secondary" id="exit-btn" type="button">&#x8FD4;&#x56DE;</button>
+                        </div>
+                        <p class="hotkeys-hint">
+                            &#x5FEB;&#x6377;&#x952E;&#xFF1A; Enter/Space/R = &#x518D;&#x73A9; &#xFF1B; Esc/Backspace/B = &#x8FD4;&#x56DE;
+                        </p>
                     </div>
                 </div>
             </div>
@@ -340,10 +406,16 @@
                 matchedPairs: 0,
                 totalPairs: 0,
                 moves: 0,
+                bestScore: localStorage.getItem('memoryBestScore') || Infinity,
+                mode: localStorage.getItem('memoryMode') || 'normal',
                 gameStarted: false,
                 gameOver: false,
                 timer: null,
                 seconds: 0,
+                uiLocked: false,
+                hintsRemaining: 0,
+                hintCooldownUntil: 0,
+                previewCooldownUntil: 0,
                 difficulty: {
                     rows: 4,
                     cols: 4
@@ -364,13 +436,156 @@
             const grid = document.getElementById('memory-grid');
             const movesCounter = document.getElementById('moves-counter');
             const timeCounter = document.getElementById('time-counter');
+            const bestScoreDisplay = document.getElementById('best-score-display');
             const resetBtn = document.getElementById('reset-btn');
+            const previewBtn = document.getElementById('preview-btn');
+            const hintBtn = document.getElementById('hint-btn');
+            const hintRemainingEl = document.getElementById('hint-remaining');
             const difficultyBtns = document.querySelectorAll('.difficulty-btn');
+            const modeBtns = document.querySelectorAll('.memory-mode-btn');
+            const dailyInfoEl = document.getElementById('daily-info');
             const gameOverModal = document.getElementById('game-over-modal');
             const finalMoves = document.getElementById('final-moves');
             const finalTime = document.getElementById('final-time');
             const starsResult = document.getElementById('stars-result');
             const playAgainBtn = document.getElementById('play-again-btn');
+            const exitBtn = document.getElementById('exit-btn');
+            const backLink = document.querySelector('a.back-btn[href]');
+
+            function isEditableTarget(target) {
+                if (!target || !(target instanceof Element)) return false;
+                const tag = target.tagName;
+                return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
+            }
+
+            function handleGameOverHotkeys(e) {
+                if (!gameOverModal || !gameOverModal.classList.contains('active')) return;
+                if (isEditableTarget(e.target)) return;
+
+                const code = e.code;
+                if (code === 'Enter' || code === 'Space' || code === 'KeyR') {
+                    e.preventDefault();
+                    if (playAgainBtn) playAgainBtn.click();
+                    return;
+                }
+                if (code === 'Escape' || code === 'Backspace' || code === 'KeyB') {
+                    e.preventDefault();
+                    if (exitBtn) {
+                        exitBtn.click();
+                        return;
+                    }
+                    const href = (backLink && backLink.getAttribute('href')) ? backLink.getAttribute('href') : 'index.html';
+                    window.location.href = href;
+                }
+            }
+
+            function getLocalDateKey() {
+                const d = new Date();
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}`;
+            }
+
+            function getGridKey() {
+                return `${gameState.difficulty.cols}x${gameState.difficulty.rows}`;
+            }
+
+            function hashStringToSeed(str) {
+                // FNV-1a 32-bit
+                let h = 2166136261;
+                for (let i = 0; i < str.length; i++) {
+                    h ^= str.charCodeAt(i);
+                    h = Math.imul(h, 16777619);
+                }
+                return h >>> 0;
+            }
+
+            function mulberry32(seed) {
+                let a = seed >>> 0;
+                return function() {
+                    a |= 0;
+                    a = (a + 0x6D2B79F5) | 0;
+                    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+                    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+                };
+            }
+
+            function getDailySeed() {
+                const dateKey = getLocalDateKey();
+                const gridKey = getGridKey();
+                return hashStringToSeed(`memory|${dateKey}|${gridKey}`);
+            }
+
+            function getDailyBestStorageKey() {
+                const dateKey = getLocalDateKey();
+                const gridKey = getGridKey();
+                return `memoryDailyBest_${dateKey}_${gridKey}`;
+            }
+
+            function readDailyBest() {
+                try {
+                    const raw = localStorage.getItem(getDailyBestStorageKey());
+                    if (!raw) return null;
+                    const obj = JSON.parse(raw);
+                    if (!obj || typeof obj.moves !== 'number' || typeof obj.seconds !== 'number') return null;
+                    return obj;
+                } catch {
+                    return null;
+                }
+            }
+
+            function writeDailyBest(result) {
+                try {
+                    localStorage.setItem(getDailyBestStorageKey(), JSON.stringify(result));
+                } catch {
+                    // ignore
+                }
+            }
+
+            function formatMMSS(totalSeconds) {
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+
+            function updateDailyInfo() {
+                if (!dailyInfoEl) return;
+                if (gameState.mode !== 'daily') {
+                    dailyInfoEl.textContent = '';
+                    return;
+                }
+
+                const best = readDailyBest();
+                const dateKey = getLocalDateKey();
+                const gridKey = getGridKey();
+
+                if (best) {
+                    dailyInfoEl.textContent =
+                        `\u4eca\u65e5\u6311\u6218 ${dateKey} (${gridKey}) \u6700\u4f73\uff1a ${best.moves} \u6b65 / ${formatMMSS(best.seconds)}`;
+                } else {
+                    dailyInfoEl.textContent =
+                        `\u4eca\u65e5\u6311\u6218 ${dateKey} (${gridKey}) \u5c1a\u65e0\u8bb0\u5f55\uff0c\u51b2\u51fa\u9996\u8bb0\u5f55\uff01`;
+                }
+            }
+
+            function updateModeButtons() {
+                modeBtns.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.mode === gameState.mode);
+                });
+            }
+
+            function setMode(mode) {
+                const next = (mode === 'daily') ? 'daily' : 'normal';
+                if (gameState.mode === next) return;
+                gameState.mode = next;
+                try { localStorage.setItem('memoryMode', next); } catch {}
+                updateModeButtons();
+                updateDailyInfo();
+                resetGame();
+                updateBestScore();
+            }
             
             // 添加触摸优化
             function addTouchSupport() {
@@ -379,7 +594,7 @@
                 
                 if (isTouchDevice) {
                     // 添加active状态支持
-                    document.querySelectorAll('.btn, .difficulty-btn').forEach(button => {
+                    document.querySelectorAll('.btn, .difficulty-btn, .memory-mode-btn').forEach(button => {
                         button.addEventListener('touchstart', function() {
                             this.classList.add('active-touch');
                         }, { passive: true });
@@ -403,15 +618,35 @@
                 resetGameState();
                 createCards();
                 updateStats();
+                updateBestScore(); // 更新最佳分数显示
+                updateHintUI();
+                updateModeButtons();
+                updateDailyInfo();
                 addTouchSupport(); // 添加触摸支持
                 
                 // 绑定事件
                 resetBtn.addEventListener('click', resetGame);
+                previewBtn.addEventListener('click', previewBoard);
+                hintBtn.addEventListener('click', useHint);
                 playAgainBtn.addEventListener('click', closeModalAndReset);
+                if (exitBtn) {
+                    exitBtn.addEventListener('click', function() {
+                        const href = (backLink && backLink.getAttribute('href')) ? backLink.getAttribute('href') : 'index.html';
+                        window.location.href = href;
+                    });
+                }
+                document.addEventListener('keydown', handleGameOverHotkeys, { passive: false });
                 
                 // 绑定难度按钮
                 difficultyBtns.forEach(btn => {
                     btn.addEventListener('click', changeDifficulty);
+                });
+
+                // Bind mode buttons
+                modeBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        setMode(this.dataset.mode);
+                    });
                 });
             }
             
@@ -424,11 +659,124 @@
                 gameState.gameStarted = false;
                 gameState.gameOver = false;
                 gameState.seconds = 0;
+                gameState.uiLocked = false;
+                gameState.hintsRemaining = (gameState.mode === 'daily') ? 0 : getHintLimit();
+                gameState.hintCooldownUntil = 0;
+                gameState.previewCooldownUntil = 0;
+                
+                // 从localStorage获取最佳分数
+                const currentGrid = `${gameState.difficulty.cols}x${gameState.difficulty.rows}`;
+                gameState.bestScore = localStorage.getItem(`memoryBestScore_${currentGrid}`) || Infinity;
                 
                 if (gameState.timer) {
                     clearInterval(gameState.timer);
                     gameState.timer = null;
                 }
+            }
+
+            function getHintLimit() {
+                const cells = gameState.difficulty.cols * gameState.difficulty.rows;
+                if (cells <= 12) return 3; // 4x3
+                if (cells <= 16) return 2; // 4x4
+                return 1; // 6x4
+            }
+
+            function updateHintUI() {
+                if (hintRemainingEl) hintRemainingEl.textContent = String(gameState.hintsRemaining || 0);
+
+                const now = Date.now();
+                const hintCooling = (gameState.hintCooldownUntil || 0) > now;
+                const previewCooling = (gameState.previewCooldownUntil || 0) > now;
+
+                if (hintBtn) {
+                    const disabledByMode = (gameState.mode === 'daily');
+                    hintBtn.disabled = disabledByMode || !!gameState.gameOver || !!gameState.uiLocked || hintCooling || (gameState.hintsRemaining || 0) <= 0 || gameState.flippedCards.length > 0;
+                    hintBtn.title = disabledByMode ? '\u4eca\u65e5\u6311\u6218\u6a21\u5f0f\u4e0d\u53ef\u7528\u63d0\u793a' : '';
+                }
+                if (previewBtn) {
+                    const disabledByMode = (gameState.mode === 'daily');
+                    previewBtn.disabled = disabledByMode || !!gameState.gameOver || !!gameState.uiLocked || previewCooling;
+                    previewBtn.title = disabledByMode ? '\u4eca\u65e5\u6311\u6218\u6a21\u5f0f\u4e0d\u53ef\u7528\u9884\u89c8' : '';
+                }
+            }
+
+            function withUiLock(fn) {
+                gameState.uiLocked = true;
+                updateHintUI();
+                try {
+                    return fn();
+                } finally {
+                    // unlocked by caller when async work finishes
+                }
+            }
+
+            function revealIndexesTemporarily(indexes, durationMs) {
+                if (!indexes || indexes.length === 0) return;
+                withUiLock(() => {
+                    indexes.forEach(i => {
+                        const c = gameState.cards[i];
+                        if (!c || c.matched) return;
+                        c.element.classList.add('flipped');
+                    });
+                });
+
+                setTimeout(() => {
+                    indexes.forEach(i => {
+                        const c = gameState.cards[i];
+                        if (!c || c.matched) return;
+                        // Don't override real flips made by the player
+                        if (!c.flipped) c.element.classList.remove('flipped');
+                    });
+                    gameState.uiLocked = false;
+                    updateHintUI();
+                }, durationMs);
+            }
+
+            function previewBoard() {
+                const now = Date.now();
+                if (gameState.mode === 'daily') return;
+                if ((gameState.previewCooldownUntil || 0) > now) return;
+                if (gameState.gameOver || gameState.uiLocked) return;
+
+                gameState.previewCooldownUntil = now + 2500;
+                updateHintUI();
+
+                const indexes = [];
+                for (let i = 0; i < gameState.cards.length; i++) {
+                    const c = gameState.cards[i];
+                    if (!c.matched && !c.flipped) indexes.push(i);
+                }
+                revealIndexesTemporarily(indexes, 900);
+            }
+
+            function findUnmatchedPair() {
+                const seen = new Map();
+                for (let i = 0; i < gameState.cards.length; i++) {
+                    const c = gameState.cards[i];
+                    if (!c || c.matched) continue;
+                    if (seen.has(c.icon)) {
+                        return [seen.get(c.icon), i];
+                    }
+                    seen.set(c.icon, i);
+                }
+                return null;
+            }
+
+            function useHint() {
+                const now = Date.now();
+                if (gameState.mode === 'daily') return;
+                if (gameState.gameOver || gameState.uiLocked) return;
+                if ((gameState.hintsRemaining || 0) <= 0) return;
+                if ((gameState.hintCooldownUntil || 0) > now) return;
+                if (gameState.flippedCards.length > 0) return;
+
+                const pair = findUnmatchedPair();
+                if (!pair) return;
+
+                gameState.hintsRemaining -= 1;
+                gameState.hintCooldownUntil = now + 3500;
+                updateHintUI();
+                revealIndexesTemporarily(pair, 700);
             }
             
             // 创建卡片
@@ -449,7 +797,8 @@
                 }
                 
                 // 随机洗牌
-                shuffleArray(cardIcons);
+                const rng = (gameState.mode === 'daily') ? mulberry32(getDailySeed()) : null;
+                shuffleArray(cardIcons, rng);
                 
                 // 创建卡片元素
                 for (let i = 0; i < cardIcons.length; i++) {
@@ -482,9 +831,10 @@
             }
             
             // 洗牌算法
-            function shuffleArray(array) {
+            function shuffleArray(array, rng) {
+                const random = (typeof rng === 'function') ? rng : Math.random;
                 for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
+                    const j = Math.floor(random() * (i + 1));
                     [array[i], array[j]] = [array[j], array[i]];
                 }
                 return array;
@@ -496,7 +846,7 @@
                 const index = parseInt(this.dataset.index);
                 const card = gameState.cards[index];
                 
-                if (gameState.gameOver || card.flipped || card.matched || gameState.flippedCards.length >= 2) {
+                if (gameState.gameOver || gameState.uiLocked || card.flipped || card.matched || gameState.flippedCards.length >= 2) {
                     return;
                 }
                 
@@ -549,6 +899,7 @@
                 
                 // 清空已翻开的卡片
                 gameState.flippedCards = [];
+                updateHintUI();
             }
             
             // 开始计时器
@@ -556,6 +907,7 @@
                 gameState.timer = setInterval(function() {
                     gameState.seconds++;
                     updateStats();
+                    updateHintUI();
                 }, 1000);
             }
             
@@ -571,10 +923,23 @@
                 timeCounter.textContent = formattedTime;
             }
             
+            // 更新最佳分数显示
+            function updateBestScore() {
+                const currentGrid = `${gameState.difficulty.cols}x${gameState.difficulty.rows}`;
+                const bestScore = localStorage.getItem(`memoryBestScore_${currentGrid}`);
+                
+                if (bestScore && bestScore !== 'Infinity') {
+                    bestScoreDisplay.textContent = bestScore;
+                } else {
+                    bestScoreDisplay.textContent = '-';
+                }
+            }
+            
             // 结束游戏
             function endGame() {
                 gameState.gameOver = true;
                 clearInterval(gameState.timer);
+                updateHintUI();
                 
                 // 更新结果
                 finalMoves.textContent = gameState.moves;
@@ -597,6 +962,27 @@
                     starsResult.appendChild(star);
                 }
                 
+                // 更新最佳分数
+                const currentGrid = `${gameState.difficulty.cols}x${gameState.difficulty.rows}`;
+                const currentBestScore = localStorage.getItem(`memoryBestScore_${currentGrid}`) || Infinity;
+
+                if (gameState.mode !== 'daily') {
+                    if (gameState.moves < currentBestScore) {
+                        localStorage.setItem(`memoryBestScore_${currentGrid}`, gameState.moves);
+                        gameState.bestScore = gameState.moves;
+                        updateBestScore();
+                    }
+                } else {
+                    const prev = readDailyBest();
+                    const next = { moves: gameState.moves, seconds: gameState.seconds };
+                    const better =
+                        !prev ||
+                        next.moves < prev.moves ||
+                        (next.moves === prev.moves && next.seconds < prev.seconds);
+                    if (better) writeDailyBest(next);
+                    updateDailyInfo();
+                }
+                
                 // 显示弹窗
                 setTimeout(() => {
                     gameOverModal.classList.add('active');
@@ -614,6 +1000,8 @@
                 resetGameState();
                 createCards();
                 updateStats();
+                updateHintUI();
+                updateDailyInfo();
             }
             
             // 修改难度
@@ -629,6 +1017,9 @@
                 
                 // 重置游戏
                 resetGame();
+                // 更新最佳分数显示
+                updateBestScore();
+                updateDailyInfo();
             }
             
             // 优化对移动设备的支持
